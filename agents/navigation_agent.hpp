@@ -117,4 +117,5 @@ private:
                      edgesNoRel &edges_no_rel, bool is_russian);
   std::string getName(ScAddr node_addr, bool is_russian);
   std::string getDescription(ScAddr node_addr, bool is_russian);
+  void form_result(ScAction &action, const std::string message);
 };

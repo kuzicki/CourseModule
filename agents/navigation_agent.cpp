@@ -315,15 +315,21 @@ std::string NavigationAgent::getNodeElements(ScAddr node_addr,
 
   getOut5(node_addr, ScType::EdgeDCommonConst, edge_set, edge_map, is_russian);
   getOut5(node_addr, ScType::EdgeUCommonConst, edge_set, edge_map, is_russian);
-  getOut5(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edge_map, is_russian);
+  getOut5(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edge_map,
+          is_russian);
   getIn5(node_addr, ScType::EdgeDCommonConst, edge_set, edge_map, is_russian);
   getIn5(node_addr, ScType::EdgeUCommonConst, edge_set, edge_map, is_russian);
-  getIn5(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edge_map, is_russian);
+  getIn5(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edge_map,
+         is_russian);
   // std::cout << "---------3--------" << std::endl;
-  getOut3(node_addr, ScType::EdgeDCommonConst, edge_set, edges_no_rel, is_russian);
-  getOut3(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edges_no_rel, is_russian);
-  getIn3(node_addr, ScType::EdgeDCommonConst, edge_set, edges_no_rel, is_russian);
-  getIn3(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edges_no_rel, is_russian);
+  getOut3(node_addr, ScType::EdgeDCommonConst, edge_set, edges_no_rel,
+          is_russian);
+  getOut3(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edges_no_rel,
+          is_russian);
+  getIn3(node_addr, ScType::EdgeDCommonConst, edge_set, edges_no_rel,
+         is_russian);
+  getIn3(node_addr, ScType::EdgeAccessConstPosPerm, edge_set, edges_no_rel,
+         is_russian);
   std::string result = "";
   result += getDescription(node_addr, is_russian) + "\n";
   std::cout << getDescription(node_addr, is_russian) << std::endl;
@@ -357,10 +363,17 @@ std::string NavigationAgent::getNodeElements(ScAddr node_addr,
   return result;
 }
 
+void NavigationAgent::form_result(ScAction &action, const std::string message) {
+    auto link_res = m_context.GenerateLink();
+    m_context.SetLinkContent(link_res, message);
+    action.FormResult(link_res);
+}
+
 ScResult NavigationAgent::DoProgram(ScAction &action) {
   auto node_name_opt = getArgName(action);
   if (!node_name_opt.has_value()) {
-    return action.FinishWithError();
+    form_result(action, "Incorrect Input");
+    return action.FinishUnsuccessfully();
   }
   std::pair<std::string, bool> pair_name = node_name_opt.value();
   auto node_name = pair_name.first;
@@ -378,7 +391,8 @@ ScResult NavigationAgent::DoProgram(ScAction &action) {
     if (!findLinks(action, node_name, is_russian)) {
 
       SC_AGENT_LOG_ERROR("No matches were found");
-      return action.FinishWithError();
+      form_result(action, "Not Found");
+      return action.FinishSuccessfully();
     }
     return action.FinishSuccessfully();
   }
@@ -386,13 +400,12 @@ ScResult NavigationAgent::DoProgram(ScAction &action) {
 
   if (!isLinkedDomain(found_node)) {
     SC_AGENT_LOG_ERROR("No matches were found");
-    return action.FinishWithError();
+    form_result(action, "Not Found");
+    return action.FinishSuccessfully();
   }
   std::string result = getNodeElements(found_node, is_russian);
 
-  auto link_res = m_context.GenerateLink();
-  m_context.SetLinkContent(link_res, result);
-  action.FormResult(link_res);
+  form_result(action, result);
 
   return action.FinishSuccessfully();
 }

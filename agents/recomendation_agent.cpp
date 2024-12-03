@@ -37,8 +37,8 @@ RecommendationAgent::find_node_by_link(std::string &node_name) {
   for (auto link : links_set) {
     ScTemplate templ;
     templ.Quintuple(ScType::NodeVarClass >> "_disease_node",
-                    ScType::EdgeDCommonVar, link,
-                    ScType::EdgeAccessVarPosPerm, main_idtf);
+                    ScType::EdgeDCommonVar, link, ScType::EdgeAccessVarPosPerm,
+                    main_idtf);
     templ.Triple(RecommendationAgentKeynodes::concept_disease,
                  ScType::EdgeAccessVarPosPerm, "_disease_node");
     ScTemplateSearchResult res;
@@ -53,10 +53,18 @@ RecommendationAgent::find_node_by_link(std::string &node_name) {
   return std::nullopt;
 }
 
+void RecommendationAgent::form_result(ScAction &action,
+                                      const std::string message) {
+  auto link_res = m_context.GenerateLink();
+  m_context.SetLinkContent(link_res, message);
+  action.FormResult(link_res);
+}
+
 ScResult RecommendationAgent::DoProgram(ScAction &action) {
   auto find_node_opt = getArgs(action);
   if (!find_node_opt.has_value()) {
-    return action.FinishWithError();
+    form_result(action, "Incorrect Input");
+    return action.FinishSuccessfully();
   }
   std::string find_node = find_node_opt.value();
 
@@ -65,7 +73,8 @@ ScResult RecommendationAgent::DoProgram(ScAction &action) {
     std::cout << "Calling the find_node_by_link func" << std::endl;
     std::optional<ScAddr> node_opt = find_node_by_link(find_node);
     if (!node_opt.has_value()) {
-      return action.FinishWithError();
+      form_result(action, "Not Found");
+      return action.FinishSuccessfully();
     } else {
       node = node_opt.value();
     }
@@ -75,7 +84,8 @@ ScResult RecommendationAgent::DoProgram(ScAction &action) {
       m_context.CreateIterator3(RecommendationAgentKeynodes::concept_disease,
                                 ScType::EdgeAccessConstPosPerm, node);
   if (!it3->IsValid()) {
-    return action.FinishWithError();
+    form_result(action, "Not Found");
+    return action.FinishSuccessfully();
   }
   std::cout << "Sys idtf: " << m_context.GetElementSystemIdentifier(node)
             << std::endl;
@@ -85,11 +95,8 @@ ScResult RecommendationAgent::DoProgram(ScAction &action) {
       ScType::EdgeAccessConstPosPerm, RecommendationAgentKeynodes::nrel_rec);
 
   if (!it5->Next()) {
-    auto link_res = m_context.GenerateLink();
-    std::string result = "No recomendations";
-    m_context.SetLinkContent(link_res, result);
-    action.FormResult(link_res);
-    return action.FinishWithError();
+    form_result(action, "No recomendations");
+    return action.FinishSuccessfully();
   }
   ScAddr rec_link = it5->Get(2);
   action.FormResult(rec_link);
