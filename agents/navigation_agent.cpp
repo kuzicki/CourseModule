@@ -364,9 +364,15 @@ std::string NavigationAgent::getNodeElements(ScAddr node_addr,
 }
 
 void NavigationAgent::form_result(ScAction &action, const std::string message) {
-    auto link_res = m_context.GenerateLink();
-    m_context.SetLinkContent(link_res, message);
-    action.FormResult(link_res);
+  auto link_res = m_context.GenerateLink();
+  m_context.SetLinkContent(link_res, message);
+  action.FormResult(link_res);
+}
+
+bool isValidString(const std::string &str) {
+  return std::all_of(str.begin(), str.end(), [](char c) {
+    return std::isalpha(c) || c == '_' || c == ' ';
+  });
 }
 
 ScResult NavigationAgent::DoProgram(ScAction &action) {
@@ -382,8 +388,12 @@ ScResult NavigationAgent::DoProgram(ScAction &action) {
 
   ScAddr found_node = m_context.GenerateNode(ScType::NodeConst);
 
-  bool is_found =
-      m_context.SearchElementBySystemIdentifier(node_name, found_node);
+  bool is_found;
+  if (isValidString(node_name)) {
+    is_found = m_context.SearchElementBySystemIdentifier(node_name, found_node);
+  } else {
+    is_found = false;
+  }
 
   SC_AGENT_LOG_INFO("Pre check");
   if (!is_found) {

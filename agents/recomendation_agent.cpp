@@ -60,6 +60,13 @@ void RecommendationAgent::form_result(ScAction &action,
   action.FormResult(link_res);
 }
 
+bool isValidStringFind(const std::string &str) {
+  return std::all_of(str.begin(), str.end(), [](char c) {
+    return std::isalpha(c) || c == '_' || c == ' ';
+  });
+}
+
+
 ScResult RecommendationAgent::DoProgram(ScAction &action) {
   auto find_node_opt = getArgs(action);
   if (!find_node_opt.has_value()) {
@@ -69,8 +76,9 @@ ScResult RecommendationAgent::DoProgram(ScAction &action) {
   std::string find_node = find_node_opt.value();
 
   ScAddr node;
-  if (!m_context.SearchElementBySystemIdentifier(find_node, node)) {
-    std::cout << "Calling the find_node_by_link func" << std::endl;
+  bool is_valid = isValidStringFind(find_node);
+
+  if (!is_valid || !m_context.SearchElementBySystemIdentifier(find_node, node)) {
     std::optional<ScAddr> node_opt = find_node_by_link(find_node);
     if (!node_opt.has_value()) {
       form_result(action, "Not Found");
